@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj" />
+    <Project Path="src/DFDS.SmartGate.Application/DFDS.SmartGate.Application.csproj" />
+    <Project Path="src/DFDS.SmartGate.Domain/DFDS.SmartGate.Domain.csproj" />
+    <Project Path="src/DFDS.SmartGate.Infrastructure/DFDS.SmartGate.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DFDS.SmartGate.IntegrationTests/DFDS.SmartGate.IntegrationTests.csproj" />
+    <Project Path="tests/DFDS.SmartGate.UnitTests/DFDS.SmartGate.UnitTests.csproj" />
+  </Folder>
+</Solution>
