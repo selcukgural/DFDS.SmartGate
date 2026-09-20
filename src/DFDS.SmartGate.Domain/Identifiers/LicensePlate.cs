@@ -7,6 +7,9 @@ namespace DFDS.SmartGate.Domain.Identifiers;
 /// </summary>
 public readonly record struct LicensePlate
 {
+    /// <summary>
+    /// The maximum allowed length of a normalized license plate value.
+    /// </summary>
     public const int MaxLength = 20;
     private const string Name = "LicensePlate";
 
