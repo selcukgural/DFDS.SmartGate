@@ -24,4 +24,7 @@ public enum ErrorKind
     /// The request conflicts with the current state of the resource or system.
     /// </summary>
     Conflict = 3,
+    
+    /// <summary>The caller is authenticated but not allowed to act on the target (e.g. a terminal outside their claims); maps to HTTP 403.</summary>
+    Forbidden = 4,
 }

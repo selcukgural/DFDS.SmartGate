@@ -10,6 +10,9 @@ namespace DFDS.SmartGate.Domain.Locations;
 /// </summary>
 public readonly record struct LocationCode
 {
+    /// <summary>
+    /// The exact number of characters in a UN/LOCODE (two-letter country code followed by a three-character location code).
+    /// </summary>
     public const int Length = 5;
 
     /// <summary>

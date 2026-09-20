@@ -47,4 +47,12 @@ public readonly record struct DomainError(string Code, string Message, ErrorKind
     /// </param>
     /// <returns>A <see cref="DomainError"/> marked as a conflict.</returns>
     public static DomainError Conflict(string code, string message) => new(code, message, ErrorKind.Conflict);
+    
+    /// <summary>
+    /// Creates an error of kind <see cref="ErrorKind.Forbidden"/> (the caller may not act on the target).
+    /// </summary>
+    /// <param name="code">Stable error code.</param>
+    /// <param name="message">Client-safe explanation.</param>
+    /// <returns>The forbidden error.</returns>
+    public static DomainError Forbidden(string code, string message) => new(code, message, ErrorKind.Forbidden);
 }
