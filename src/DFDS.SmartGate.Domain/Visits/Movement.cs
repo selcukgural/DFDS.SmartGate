@@ -27,6 +27,11 @@ public sealed class Movement
         To = to;
         Reference = reference;
     }
+    
+    /// <summary>Materialisation constructor for the persistence layer; state is written to the backing fields.</summary>
+    private Movement()
+    {
+    }
 
     /// <summary>
     /// Gets the unique identifier for this movement.

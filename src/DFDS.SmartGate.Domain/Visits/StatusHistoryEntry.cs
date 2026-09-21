@@ -21,6 +21,12 @@ public sealed class StatusHistoryEntry
         ChangedBy = changedBy;
         Reason = reason;
     }
+    
+    /// <summary>Materialisation constructor for the persistence layer; state is written to the backing fields.</summary>
+    private StatusHistoryEntry()
+    {
+        ChangedBy = null!;
+    }
 
     /// <summary>
     /// Gets the unique identifier of this audit-row entry.
