@@ -31,6 +31,19 @@ public sealed class Visit
         _movements = new List<Movement>(draft.Movements.Count);
         _statusHistory = [StatusHistoryEntry.Create(CurrentStatus, createdAt, draft.CreatedBy, reason: null)];
     }
+    
+    /// <summary>
+    /// Materialisation constructor for the persistence layer, which writes the stored state straight into the
+    /// backing fields. Never called by application code; the aggregate is only ever built through <see cref="Create"/>.
+    /// </summary>
+    private Visit()
+    {
+        Truck = null!;
+        Driver = null!;
+        CreatedBy = null!;
+        _movements = [];
+        _statusHistory = [];
+    }
 
     /// <summary>
     /// Gets the unique identifier of the visit.
