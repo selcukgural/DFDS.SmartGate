@@ -143,7 +143,7 @@ sequenceDiagram
     R->>DB: SELECT visit, movements, history
     H->>H: 404 if missing or terminal ∉ caller.Terminals<br/>visit.TransitionTo(target, sub, reason, now) → 409 if not allowed
     H->>R: SaveChangesAsync()
-    R->>DB: UPDATE visits … WHERE id=@id AND xmin=@xmin; INSERT visit_status_history
+    R->>DB: UPDATE visits … WHERE id=@id AND xmin=@xmin, then INSERT visit_status_history
     R-->>H: Result (409 Visit.ConcurrentUpdate on xmin mismatch)
     H->>H: evict cache "visit:{id}", audit log event
     H-->>E: Result<VisitResponse>
@@ -297,17 +297,29 @@ classDiagram
         +UnitNumber UnitNumber
         +LocationCode From
         +LocationCode To
-        +string? Reference
+        +string Reference
     }
     class StatusHistoryEntry {
         +VisitStatus Status
         +DateTimeOffset ChangedAt
         +string ChangedBy
-        +string? Reason
+        +string Reason
     }
-    class Truck { +UnitNumber UnitNumber; +LicensePlate LicensePlate; +string? Carrier }
-    class Driver { +string Name; +DriverLicenseNumber LicenseNumber; +string? Phone }
-    class VisitStatusTransitions { <<static>> +CanTransition(from, to) +NextOf(from) }
+    class Truck {
+        +UnitNumber UnitNumber
+        +LicensePlate LicensePlate
+        +string Carrier
+    }
+    class Driver {
+        +string Name
+        +DriverLicenseNumber LicenseNumber
+        +string Phone
+    }
+    class VisitStatusTransitions {
+        <<static>>
+        +CanTransition(from, to) bool
+        +NextOf(from) VisitStatus
+    }
     Visit "1" *-- "1..*" Movement
     Visit "1" *-- "1..*" StatusHistoryEntry : append-only
     Visit *-- Truck
