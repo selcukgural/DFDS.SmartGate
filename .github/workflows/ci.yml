@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build, unit and integration tests
+    runs-on: ubuntu-latest   # Docker is available on the runner; Testcontainers starts postgres:17-alpine for the integration tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore DFDS.SmartGate.slnx
+
+      - name: Build (warnings are errors)
+        run: dotnet build DFDS.SmartGate.slnx --no-restore -c Release
+
+      - name: Unit tests
+        run: dotnet test --project tests/DFDS.SmartGate.UnitTests/DFDS.SmartGate.UnitTests.csproj --no-build -c Release
+
+      - name: Integration tests
+        run: dotnet test --project tests/DFDS.SmartGate.IntegrationTests/DFDS.SmartGate.IntegrationTests.csproj --no-build -c Release
+
+      - name: Container image builds
+        run: docker build -t smartgate-api:ci .

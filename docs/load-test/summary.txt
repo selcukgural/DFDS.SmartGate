@@ -1,0 +1,56 @@
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+     execution: local
+        script: tests/load/k6/visits.js
+ web dashboard: http://127.0.0.1:5665
+        output: -
+     scenarios: (100.00%) 1 scenario, 400 max VUs, 4m0s max duration (incl. graceful stop):
+              * mixed_traffic: Up to 450.00 iterations/s for 3m30s over 4 stages (maxVUs: 50-400, gracefulStop: 30s)
+  █ THRESHOLDS 
+    checks
+    ✓ 'rate>0.99' rate=100.00%
+    dropped_iterations
+    ✓ 'count<100' count=0
+    http_req_duration
+    ✓ 'p(95)<200' p(95)=8.16ms
+    ✓ 'p(99)<500' p(99)=10.71ms
+      {name:create}
+      ✓ 'p(95)<200' p(95)=3.67ms
+      {name:get}
+      ✓ 'p(95)<200' p(95)=1.65ms
+      {name:search}
+      ✓ 'p(95)<200' p(95)=8.93ms
+      {name:status}
+      ✓ 'p(95)<200' p(95)=4.94ms
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+  █ TOTAL RESULTS 
+    checks_total.......: 65999   313.222637/s
+    checks_succeeded...: 100.00% 65999 out of 65999
+    checks_failed......: 0.00%   0 out of 65999
+    ✓ get 200
+    ✓ search 200
+    ✓ create 201
+    ✓ status 200
+    HTTP
+    http_req_duration..............: avg=3.17ms   med=2.56ms p(90)=6.68ms p(95)=8.16ms p(99)=10.71ms max=221.54ms
+      { expected_response:true }...: avg=3.17ms   med=2.56ms p(90)=6.68ms p(95)=8.16ms p(99)=10.71ms max=221.54ms
+      { name:create }..............: avg=2.19ms   med=2ms    p(90)=3.15ms p(95)=3.67ms p(99)=5.89ms  max=24.52ms 
+      { name:get }.................: avg=635.13µs med=431µs  p(90)=1.32ms p(95)=1.65ms p(99)=2.65ms  max=137.75ms
+      { name:search }..............: avg=4.53ms   med=4.14ms p(90)=7.73ms p(95)=8.93ms p(99)=11.49ms max=126.33ms
+      { name:status }..............: avg=3.08ms   med=2.8ms  p(90)=4.43ms p(95)=4.94ms p(99)=8.83ms  max=72.78ms 
+    http_req_failed................: 0.00%  0 out of 66200
+    http_reqs......................: 66200  314.176557/s
+    EXECUTION
+    dropped_iterations.............: 0      0/s
+    iteration_duration.............: avg=3.28ms   med=2.68ms p(90)=6.81ms p(95)=8.28ms p(99)=10.83ms max=138.04ms
+    iterations.....................: 65999  313.222637/s
+    vus............................: 2      min=0          max=5 
+    vus_max........................: 50     min=50         max=50
+    NETWORK
+    data_received..................: 793 MB 3.8 MB/s
+    data_sent......................: 39 MB  183 kB/s
+mixed_traffic ✓ [ 100% ] 000/050 VUs  3m30s  450.00 iters/s

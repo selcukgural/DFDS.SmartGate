@@ -1,0 +1,206 @@
+# Sample Kubernetes manifest for the Smart Gate Visits API (illustrative; no cluster is expected).
+# Secrets are placeholders: in a real cluster they come from a secret store (e.g. External Secrets Operator
+# backed by AWS Secrets Manager) and are never committed.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smartgate
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartgate-api-config
+  namespace: smartgate
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  ASPNETCORE_HTTP_PORTS: "8080"
+  # TLS terminates at the ingress / load balancer; the app needs the original scheme for HSTS + redirects.
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+  Authentication__Schemes__Bearer__Authority: https://idp.example.com/realms/dfds
+  Authentication__Schemes__Bearer__ValidAudiences__0: smartgate-api
+  Authentication__Schemes__Bearer__RequireHttpsMetadata: "true"
+  # OpenTelemetry collector (ADOT / otel-collector) sidecar or daemonset; logs go to stdout as JSON.
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.observability:4317
+  OTEL_SERVICE_NAME: dfds-visits-api
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smartgate-api-secrets
+  namespace: smartgate
+type: Opaque
+stringData:
+  ConnectionStrings__Visits: "Host=visits-db.example.internal;Database=visits;Username=visits_api;Password=CHANGE_ME;SSL Mode=Require"
+  # Optional: enables the Redis L2 cache tier for multi-replica cache coherence.
+  ConnectionStrings__Redis: "visits-cache.example.internal:6379,ssl=true,password=CHANGE_ME"
+---
+# Schema migration runs before the rollout; the deployment's pods only become ready against the migrated schema.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: smartgate-api-migrate
+  namespace: smartgate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          # A migration bundle produced by `dotnet ef migrations bundle` in the pipeline, published as its own image.
+          image: ghcr.io/example/smartgate-api-migrations:1.0.0
+          args: ["--connection", "$(ConnectionStrings__Visits)"]
+          envFrom:
+            - secretRef:
+                name: smartgate-api-secrets
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartgate-api
+  namespace: smartgate
+  labels:
+    app.kubernetes.io/name: smartgate-api
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartgate-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: smartgate-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: smartgate-api
+      containers:
+        - name: api
+          image: ghcr.io/example/smartgate-api:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: smartgate-api-config
+            - secretRef:
+                name: smartgate-api-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 5
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              # Let the load balancer drain before SIGTERM; Kestrel then finishes in-flight requests.
+              sleep:
+                seconds: 5
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartgate-api
+  namespace: smartgate
+spec:
+  selector:
+    app.kubernetes.io/name: smartgate-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: smartgate-api
+  namespace: smartgate
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smartgate-api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: smartgate-api
+  namespace: smartgate
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: smartgate-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# Ingress with TLS at the edge (ALB / NGINX). HSTS is emitted by the application.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smartgate-api
+  namespace: smartgate
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 64k
+spec:
+  tls:
+    - hosts: [visits.smartgate.example.com]
+      secretName: smartgate-api-tls
+  rules:
+    - host: visits.smartgate.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: smartgate-api
+                port:
+                  name: http
