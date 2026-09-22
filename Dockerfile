@@ -8,15 +8,14 @@ WORKDIR /src
 
 # Restore first so the layer is cached until a project file or package version changes.
 COPY .editorconfig Directory.Build.props Directory.Packages.props ./
-COPY DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj DFDS.SmartGate.Api/
+COPY src/DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj src/DFDS.SmartGate.Api/
 COPY src/DFDS.SmartGate.Domain/DFDS.SmartGate.Domain.csproj src/DFDS.SmartGate.Domain/
 COPY src/DFDS.SmartGate.Application/DFDS.SmartGate.Application.csproj src/DFDS.SmartGate.Application/
 COPY src/DFDS.SmartGate.Infrastructure/DFDS.SmartGate.Infrastructure.csproj src/DFDS.SmartGate.Infrastructure/
-RUN dotnet restore DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj
+RUN dotnet restore src/DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj
 
-COPY DFDS.SmartGate.Api/ DFDS.SmartGate.Api/
 COPY src/ src/
-RUN dotnet publish DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj -c Release -o /app --no-restore
+RUN dotnet publish src/DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra AS runtime
 WORKDIR /app

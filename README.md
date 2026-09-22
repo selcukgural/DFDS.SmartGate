@@ -57,7 +57,7 @@ If port 5432 is already taken by a local PostgreSQL, publish the container on an
 ```bash
 dotnet user-secrets set "ConnectionStrings:Visits" \
   "Host=localhost;Database=dfds_visits_dev;Username=postgres;Password=postgres" \
-  --project DFDS.SmartGate.Api
+  --project src/DFDS.SmartGate.Api
 ```
 
 ### 3. Build and apply the schema
@@ -79,7 +79,7 @@ The API authenticates with OAuth2/JWT bearer tokens. For local development, ASP.
 tokens the Development profile trusts (signing key stored in user-secrets):
 
 ```bash
-dotnet user-jwts create --project DFDS.SmartGate.Api \
+dotnet user-jwts create --project src/DFDS.SmartGate.Api \
   --name gate-operator \
   --claim "terminal=DKCPH SEGOT" \
   --output token
@@ -91,8 +91,8 @@ repeat a claim; real identity providers emit a multi-valued claim). Copy the pri
 ### 5. Run the API
 
 ```bash
-dotnet run --project DFDS.SmartGate.Api                           # http://localhost:5072
-dotnet run --project DFDS.SmartGate.Api --launch-profile https    # https://localhost:7172 (dev certificate)
+dotnet run --project src/DFDS.SmartGate.Api                           # http://localhost:5072
+dotnet run --project src/DFDS.SmartGate.Api --launch-profile https    # https://localhost:7172 (dev certificate)
 ```
 
 In the Development environment the OpenAPI document is served anonymously at `/openapi/v1.json`.
@@ -127,7 +127,7 @@ curl -s "http://localhost:5072/api/visits?terminalId=DKCPH&currentStatus=AtGate&
   -H "Authorization: Bearer $TOKEN"
 ```
 
-`DFDS.SmartGate.Api/DFDS.SmartGate.Api.http` contains the same requests (plus error cases) for the Rider / VS Code
+`src/DFDS.SmartGate.Api/DFDS.SmartGate.Api.http` contains the same requests (plus error cases) for the Rider / VS Code
 HTTP client.
 
 ## Configuration
@@ -196,7 +196,7 @@ exceeds 200 ms. Needs [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/
 API (steps 1–5 above, ideally `dotnet run -c Release`):
 
 ```bash
-TOKEN=$(dotnet user-jwts create --project DFDS.SmartGate.Api --name gate-operator --claim "terminal=DKCPH SEGOT" --output token | tail -1)
+TOKEN=$(dotnet user-jwts create --project src/DFDS.SmartGate.Api --name gate-operator --claim "terminal=DKCPH SEGOT" --output token | tail -1)
 k6 run -e TOKEN=$TOKEN tests/load/k6/visits.js                 # full profile, ~4 min
 k6 run -e TOKEN=$TOKEN -e PROFILE=ci tests/load/k6/visits.js   # 300 req/s for 60 s
 
@@ -259,10 +259,10 @@ DFDS.SmartGate.slnx                    solution (src/ and tests/ folders)
 Directory.Build.props                  net10.0, nullable, warnings-as-errors, analyzers, XML docs required
 Directory.Packages.props               central package versions
 global.json                            SDK pin + Microsoft.Testing.Platform runner
-DFDS.SmartGate.Api/                    ASP.NET Core host: endpoints, JWT auth, ProblemDetails, observability
 src/DFDS.SmartGate.Domain/             entities, value objects, status transitions, Result/DomainError – no dependencies
 src/DFDS.SmartGate.Application/        use-case handlers, FluentValidation validators, read models, ports
 src/DFDS.SmartGate.Infrastructure/     EF Core + PostgreSQL: DbContext, configurations, migrations, port implementations
+src/DFDS.SmartGate.Api/                ASP.NET Core host: endpoints, JWT auth, ProblemDetails, observability
 tests/DFDS.SmartGate.UnitTests/        xunit.v3 unit tests (Domain, Application, Api glue)
 tests/DFDS.SmartGate.IntegrationTests/ xunit.v3 + WebApplicationFactory + Testcontainers
 tests/load/k6/                         k6 load-test scenario

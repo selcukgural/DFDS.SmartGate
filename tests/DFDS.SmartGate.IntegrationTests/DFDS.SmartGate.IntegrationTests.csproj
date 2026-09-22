@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\DFDS.SmartGate.Api\DFDS.SmartGate.Api.csproj" />
+      <ProjectReference Include="..\..\src\DFDS.SmartGate.Api\DFDS.SmartGate.Api.csproj" />
     </ItemGroup>
 
 </Project>
