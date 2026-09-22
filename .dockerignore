@@ -1,0 +1,18 @@
+# Build context: only what `dotnet publish` of the Api needs.
+.git
+.idea
+**/bin
+**/obj
+# Older dotnet-ef builds leave a literal `bin\Debug` directory behind, which breaks MSBuild globbing on Linux.
+**/bin\\Debug
+tests
+docs
+deploy
+*.md
+*.user
+*.http
+.gitignore
+.dockerignore
+Dockerfile
+# The SDK image provides the SDK; the local pin must not reject its patch level.
+global.json
