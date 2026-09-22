@@ -44,7 +44,7 @@ jobs:
           global-json-file: global.json
 
       - name: Build (Release)
-        run: dotnet build DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj -c Release
+        run: dotnet build src/DFDS.SmartGate.Api/DFDS.SmartGate.Api.csproj -c Release
 
       - name: Apply schema
         run: |
@@ -54,7 +54,7 @@ jobs:
       - name: Issue a development token
         id: token
         run: |
-          TOKEN=$(dotnet user-jwts create --project DFDS.SmartGate.Api --name gate-operator --claim "terminal=DKCPH SEGOT" --output token | tail -1)
+          TOKEN=$(dotnet user-jwts create --project src/DFDS.SmartGate.Api --name gate-operator --claim "terminal=DKCPH SEGOT" --output token | tail -1)
           echo "::add-mask::$TOKEN"
           echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
 
@@ -64,7 +64,7 @@ jobs:
           ConnectionStrings__Visits: ${{ env.CONNECTION_STRING }}
           ASPNETCORE_URLS: http://localhost:5072
         run: |
-          nohup dotnet run --project DFDS.SmartGate.Api -c Release --no-build --no-launch-profile > api.log 2>&1 &
+          nohup dotnet run --project src/DFDS.SmartGate.Api -c Release --no-build --no-launch-profile > api.log 2>&1 &
           for i in $(seq 1 30); do sleep 1; curl -sf http://localhost:5072/health/ready && break; done
           curl -sf http://localhost:5072/health/ready
 
