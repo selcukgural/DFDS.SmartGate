@@ -27,7 +27,8 @@ public sealed class SearchVisitsHandler(IVisitReadStore readStore, ICallerContex
 
         var createdTo = query.CreatedTimeTo ?? timeProvider.GetUtcNow();
         var createdFrom = query.CreatedTimeFrom ?? createdTo - SearchLimits.DefaultWindow;
-        
+        var paging = Paging.From(query);
+
         IReadOnlyList<LocationCode> terminals;
 
         if (query.TerminalId is not null)
@@ -48,42 +49,54 @@ public sealed class SearchVisitsHandler(IVisitReadStore readStore, ICallerContex
 
         if (terminals.Count == 0)
         {
-            return ToResponse(PagedItems.Empty<VisitSummary>(), query, createdFrom, createdTo);
+            return ToResponse(PagedItems.Empty<VisitSummary>(), paging, createdFrom, createdTo);
         }
 
         var criteria = new VisitSearchCriteria
         {
             Terminals = terminals,
-            Status = query.CurrentStatus,
+            Status = query.CurrentStatus is null ? null : VisitStatusNames.Parse(query.CurrentStatus),
             MovementFrom = query.MovementFrom is null ? null : LocationFilter.Create(query.MovementFrom).Value,
             MovementTo = query.MovementTo is null ? null : LocationFilter.Create(query.MovementTo).Value,
             CreatedFrom = createdFrom,
             CreatedTo = createdTo,
             CreatedBy = query.CreatedBy,
-            Page = query.Page,
-            PageSize = query.PageSize,
+            Page = paging.Page,
+            PageSize = paging.PageSize,
         };
 
         var page = await readStore.SearchAsync(criteria, cancellationToken).ConfigureAwait(false);
 
-        return ToResponse(page, query, createdFrom, createdTo);
+        return ToResponse(page, paging, createdFrom, createdTo);
     }
 
     /// <summary>Assembles the response with paging metadata and the effective window.</summary>
     /// <param name="page">Items and total count from the read store.</param>
-    /// <param name="query">The original query, for page and page size.</param>
+    /// <param name="paging">Effective page and page size.</param>
     /// <param name="createdFrom">Effective lower bound.</param>
     /// <param name="createdTo">Effective upper bound.</param>
     /// <returns>The response.</returns>
-    private static SearchVisitsResponse ToResponse(PagedItems<VisitSummary> page, SearchVisitsQuery query, DateTimeOffset createdFrom, DateTimeOffset createdTo) =>
+    private static SearchVisitsResponse ToResponse(PagedItems<VisitSummary> page, Paging paging, DateTimeOffset createdFrom, DateTimeOffset createdTo) =>
         new()
         {
             Items = page.Items,
-            Page = query.Page,
-            PageSize = query.PageSize,
+            Page = paging.Page,
+            PageSize = paging.PageSize,
             TotalCount = page.TotalCount,
-            TotalPages = (page.TotalCount + query.PageSize - 1) / query.PageSize,
+            TotalPages = (page.TotalCount + paging.PageSize - 1) / paging.PageSize,
             CreatedTimeFrom = createdFrom,
             CreatedTimeTo = createdTo,
         };
+
+    /// <summary>Effective paging: the client's values or <see cref="SearchLimits"/> defaults.</summary>
+    /// <param name="Page">1-based page number.</param>
+    /// <param name="PageSize">Items per page.</param>
+    private readonly record struct Paging(int Page, int PageSize)
+    {
+        /// <summary>Resolves the paging of a validated query.</summary>
+        /// <param name="query">The query.</param>
+        /// <returns>Client values where given, defaults otherwise.</returns>
+        public static Paging From(SearchVisitsQuery query) =>
+            new(query.Page ?? SearchLimits.DefaultPage, query.PageSize ?? SearchLimits.DefaultPageSize);
+    }
 }

@@ -15,7 +15,7 @@ namespace DFDS.SmartGate.Infrastructure.Persistence.Configurations;
 internal sealed class VisitConfiguration : IEntityTypeConfiguration<Visit>
 {
     /// <summary>Table name; referenced by the child configurations' foreign keys.</summary>
-    public const string TableName = "visits";
+    private const string TableName = "visits";
 
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Visit> builder)

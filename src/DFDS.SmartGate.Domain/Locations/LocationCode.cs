@@ -65,7 +65,7 @@ public readonly record struct LocationCode
     /// </summary>
     /// <param name="candidate">The candidate value to validate.</param>
     /// <returns><c>true</c> when the value is exactly 5 characters long and conforms to the UN/LOCODE pattern; otherwise <c>false</c>.</returns>
-    public static bool HasValidFormat(ReadOnlySpan<char> candidate)
+    private static bool HasValidFormat(ReadOnlySpan<char> candidate)
     {
         if (candidate.Length != Length)
         {

@@ -4,10 +4,21 @@
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <!-- Holds ConnectionStrings:Visits and the dotnet user-jwts signing key locally; never committed. -->
+        <UserSecretsId>360FB10F-C191-49EE-87F2-8AB381004AE1</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../src/DFDS.SmartGate.Infrastructure/DFDS.SmartGate.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
     </ItemGroup>
 
 </Project>

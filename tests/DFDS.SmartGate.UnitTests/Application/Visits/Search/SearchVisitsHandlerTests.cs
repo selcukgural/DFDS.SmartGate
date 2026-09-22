@@ -98,7 +98,7 @@ public sealed class SearchVisitsHandlerTests
     {
         var query = new SearchVisitsQuery
         {
-            CurrentStatus = VisitStatus.OnSite,
+            CurrentStatus = "onSite",
             MovementFrom = "tr",
             MovementTo = "SEGOT",
             CreatedBy = "gate-1",
@@ -118,6 +118,17 @@ public sealed class SearchVisitsHandlerTests
         Assert.Equal(2, criteria.Page);
         Assert.Equal(50, criteria.PageSize);
         Assert.Equal(50, criteria.Skip);
+    }
+
+    [Fact]
+    public async Task OmittedPaging_UsesDefaults()
+    {
+        var result = await Handler().HandleAsync(new SearchVisitsQuery(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(SearchLimits.DefaultPage, _readStore.LastCriteria!.Page);
+        Assert.Equal(SearchLimits.DefaultPageSize, _readStore.LastCriteria.PageSize);
+        Assert.Equal(SearchLimits.DefaultPage, result.Value.Page);
+        Assert.Equal(SearchLimits.DefaultPageSize, result.Value.PageSize);
     }
 
     [Theory]

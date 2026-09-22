@@ -1,6 +1,73 @@
 @DFDS.SmartGate.Api_HostAddress = http://localhost:5072
 
-GET {{DFDS.SmartGate.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+# Local token (Development only): dotnet user-jwts create --claim "terminal=DKCPH SEGOT" --name gate-operator --output token
+@token = PASTE_TOKEN_HERE
+@visitId = 00000000-0000-0000-0000-000000000000
+
+### Liveness / readiness (anonymous)
+GET {{DFDS.SmartGate.Api_HostAddress}}/health/live
 
 ###
+GET {{DFDS.SmartGate.Api_HostAddress}}/health/ready
+
+### OpenAPI document (Development only)
+GET {{DFDS.SmartGate.Api_HostAddress}}/openapi/v1.json
+
+### Create a visit (201 + Location header). Identifiers are normalised: "ab 12 345" -> "AB12345".
+POST {{DFDS.SmartGate.Api_HostAddress}}/api/visits
+Authorization: Bearer {{token}}
+Content-Type: application/json
+X-Correlation-ID: sample-create-1
+
+{
+  "terminalId": "DKCPH",
+  "truck": { "unitNumber": "tr 001", "licensePlate": "ab 12 345", "carrier": "ACME Haulage" },
+  "driver": { "name": "Ada Lovelace", "licenseNumber": "dl 1234", "phone": "+4512345678" },
+  "movements": [
+    { "type": "Delivery",   "unitNumber": "cont 1", "location": "SEGOT", "reference": "BK-1" },
+    { "type": "Collection", "unitNumber": "cont 2", "location": "NLRTM" }
+  ]
+}
+
+### Create with a terminal the token does not grant -> 403
+POST {{DFDS.SmartGate.Api_HostAddress}}/api/visits
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "terminalId": "NLRTM",
+  "truck": { "unitNumber": "tr 001", "licensePlate": "ab 12 345" },
+  "driver": { "name": "Ada", "licenseNumber": "dl 1" },
+  "movements": [ { "type": "Delivery", "unitNumber": "cont 1", "location": "SEGOT" } ]
+}
+
+### Validation errors -> 400 with field-level "errors"
+POST {{DFDS.SmartGate.Api_HostAddress}}/api/visits
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "terminalId": "DK",
+  "truck": { "unitNumber": "", "licensePlate": "ab 12 345" },
+  "driver": { "name": "", "licenseNumber": "x", "phone": "123" },
+  "movements": []
+}
+
+### Get by id (404 for unknown ids and for visits of other terminals)
+GET {{DFDS.SmartGate.Api_HostAddress}}/api/visits/{{visitId}}
+Authorization: Bearer {{token}}
+
+### Update status (strict forward flow: PreRegistered -> AtGate -> OnSite -> Completed; 409 otherwise)
+POST {{DFDS.SmartGate.Api_HostAddress}}/api/visits/{{visitId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "status": "AtGate", "reason": "Arrived at gate 3" }
+
+### Search: default = caller's terminals, last 30 days, page 1 of 20
+GET {{DFDS.SmartGate.Api_HostAddress}}/api/visits
+Authorization: Bearer {{token}}
+
+### Search with filters (movementFrom/To: 2-letter country or 5-character UN/LOCODE; '+' in timestamps must be URL-encoded as %2B)
+GET {{DFDS.SmartGate.Api_HostAddress}}/api/visits?terminalId=DKCPH&currentStatus=AtGate&movementFrom=SE&movementTo=NLRTM&createdTimeFrom=2026-09-01T00:00:00Z&createdBy=gate-operator&page=1&pageSize=20
+Authorization: Bearer {{token}}
