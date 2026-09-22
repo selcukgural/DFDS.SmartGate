@@ -23,6 +23,8 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\DFDS.SmartGate.Application\DFDS.SmartGate.Application.csproj" />
       <ProjectReference Include="..\..\src\DFDS.SmartGate.Domain\DFDS.SmartGate.Domain.csproj" />
+      <!-- Host glue (claims → caller context, error mapping, filters) is pure logic and is unit-tested without a server. -->
+      <ProjectReference Include="..\..\DFDS.SmartGate.Api\DFDS.SmartGate.Api.csproj" />
     </ItemGroup>
 
 </Project>

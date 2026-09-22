@@ -13,7 +13,7 @@ namespace DFDS.SmartGate.Infrastructure.Persistence.Configurations;
 internal sealed class StatusHistoryEntryConfiguration : IEntityTypeConfiguration<StatusHistoryEntry>
 {
     /// <summary>Table name; also used by the immutability trigger in the migration.</summary>
-    public const string TableName = "visit_status_history";
+    private const string TableName = "visit_status_history";
 
     /// <summary>Shadow foreign key to the owning visit.</summary>
     public const string VisitIdProperty = "VisitId";

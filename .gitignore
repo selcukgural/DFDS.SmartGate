@@ -99,6 +99,9 @@ csx/
 *.deps.json
 *.props
 *.targets
+# MSBuild directory files are hand-maintained and must be tracked (the *.props rule above is for generated ones).
+!Directory.Build.props
+!Directory.Packages.props
 *.dbmdl
 *.dbproj.schemaview
 orleans.codegen.cs

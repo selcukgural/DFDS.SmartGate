@@ -11,7 +11,10 @@ public sealed class SearchVisitsQueryValidator : AbstractValidator<SearchVisitsQ
     public SearchVisitsQueryValidator()
     {
         RuleFor(x => x.TerminalId).MustCreate(LocationCode.Create).When(x => x.TerminalId is not null);
-        RuleFor(x => x.CurrentStatus).IsInEnum().When(x => x.CurrentStatus is not null);
+        RuleFor(x => x.CurrentStatus)
+            .Must(static value => VisitStatusNames.TryParse(value, out _))
+            .When(x => x.CurrentStatus is not null)
+            .WithMessage($"CurrentStatus must be one of: {VisitStatusNames.AllowedValues}.");
         RuleFor(x => x.MovementFrom).MustCreate(LocationFilter.Create).When(x => x.MovementFrom is not null);
         RuleFor(x => x.MovementTo).MustCreate(LocationFilter.Create).When(x => x.MovementTo is not null);
         RuleFor(x => x.CreatedBy).NotEmpty().MaximumLength(FieldLimits.CreatedByMaxLength).When(x => x.CreatedBy is not null);
@@ -21,7 +24,7 @@ public sealed class SearchVisitsQueryValidator : AbstractValidator<SearchVisitsQ
             .When(x => x.CreatedTimeFrom is not null && x.CreatedTimeTo is not null)
             .WithMessage("'createdTimeFrom' must not be later than 'createdTimeTo'.");
 
-        RuleFor(x => x.Page).GreaterThanOrEqualTo(1);
-        RuleFor(x => x.PageSize).InclusiveBetween(1, SearchLimits.MaxPageSize);
+        RuleFor(x => x.Page).GreaterThanOrEqualTo(1).When(x => x.Page is not null);
+        RuleFor(x => x.PageSize).InclusiveBetween(1, SearchLimits.MaxPageSize).When(x => x.PageSize is not null);
     }
 }

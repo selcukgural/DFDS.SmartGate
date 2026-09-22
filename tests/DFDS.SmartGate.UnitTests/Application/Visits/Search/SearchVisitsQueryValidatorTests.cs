@@ -1,5 +1,4 @@
 using DFDS.SmartGate.Application.Visits.Search;
-using DFDS.SmartGate.Domain.Visits;
 using FluentValidation.TestHelper;
 using Xunit;
 using static DFDS.SmartGate.UnitTests.Application.ApplicationTestData;
@@ -24,7 +23,7 @@ public sealed class SearchVisitsQueryValidatorTests
         var query = new SearchVisitsQuery
         {
             TerminalId = "dkcph",
-            CurrentStatus = VisitStatus.OnSite,
+            CurrentStatus = "onsite",
             MovementFrom = "TR",
             MovementTo = "SEGOT",
             CreatedTimeFrom = Now.AddDays(-1),
@@ -57,10 +56,23 @@ public sealed class SearchVisitsQueryValidatorTests
         _validator.TestValidate(new SearchVisitsQuery { TerminalId = "DK" }).ShouldHaveValidationErrorFor(x => x.TerminalId);
     }
 
-    [Fact]
-    public void UnknownStatus_IsReported()
+    [Theory]
+    [InlineData("Rejected")]
+    [InlineData("2")]
+    [InlineData("")]
+    public void UnknownStatus_IsReported(string status)
     {
-        _validator.TestValidate(new SearchVisitsQuery { CurrentStatus = (VisitStatus)9 }).ShouldHaveValidationErrorFor(x => x.CurrentStatus);
+        _validator.TestValidate(new SearchVisitsQuery { CurrentStatus = status }).ShouldHaveValidationErrorFor(x => x.CurrentStatus)
+            .WithErrorMessage("CurrentStatus must be one of: PreRegistered, AtGate, OnSite, Completed.");
+    }
+
+    [Theory]
+    [InlineData("AtGate")]
+    [InlineData("atgate")]
+    [InlineData(" COMPLETED ")]
+    public void StatusName_IsAcceptedInAnyCasing(string status)
+    {
+        _validator.TestValidate(new SearchVisitsQuery { CurrentStatus = status }).ShouldNotHaveValidationErrorFor(x => x.CurrentStatus);
     }
 
     [Fact]
@@ -81,6 +93,15 @@ public sealed class SearchVisitsQueryValidatorTests
         var result = _validator.TestValidate(new SearchVisitsQuery { Page = page, PageSize = pageSize });
 
         Assert.False(result.IsValid);
+    }
+
+    [Fact]
+    public void OmittedPaging_IsValid()
+    {
+        var result = _validator.TestValidate(new SearchVisitsQuery { Page = null, PageSize = null });
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Page);
+        result.ShouldNotHaveValidationErrorFor(x => x.PageSize);
     }
 
     [Fact]
